@@ -31,6 +31,8 @@ function preprocess_osm_data(data) {
         electronic_recycling: [],
         battery_recycling: [],
         bottle_return_machines: [],
+        cooking_oil: [],
+        plastic_caps: [],
         unknown_type: [],
         unknown_waste: []
     };
@@ -60,6 +62,15 @@ function preprocess_osm_data(data) {
         }
         else if(has_recycling_tags(item.tags, ['plastic_packaging', 'metal_packaging', 'paper_packaging', 'glass_bottles'])) {
             containers.package_recycling.push(item);
+        }
+        else if(has_recycling_tags(item.tags, ['pet_drink_bottles'])) {
+            containers.pet_container.push(item);
+        }
+        else if(has_recycling_tags(item.tags, ['cooking_oil'])) {
+            containers.cooking_oil.push(item);
+        }
+        else if(has_recycling_tags(item.tags, ['plastic_bottle_caps'])) {
+            containers.plastic_caps.push(item);
         }
         else {
             containers.unknown_waste.push(item);
