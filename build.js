@@ -49,7 +49,7 @@ function preprocess_osm_data(data) {
         else if(item.tags.amenity === 'waste_disposal') {
             containers.mixed.push(item);
         }
-        else if(has_recycling_tags(item.tags, ['clothes', 'shoes'])) {
+        else if(has_recycling_tags(item.tags, ['clothes', 'shoes']) || has_recycling_tags(item.tags, ['clothes'])) {
             containers.clothes_recycling.push(item);
         }
         else if(has_recycling_tags(item.tags, ['electrical_appliances'])) {
