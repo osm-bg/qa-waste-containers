@@ -58,7 +58,7 @@ function preprocess_osm_data(data) {
         else if(has_recycling_tags(item.tags, ['batteries'])) {
             containers.battery_recycling.push(item);
         }
-        else if(has_recycling_tags(item.tags, ['plastic_packaging', 'metal_packaging', 'paper_packaging', 'glass_packaging'])) {
+        else if(has_recycling_tags(item.tags, ['plastic_packaging', 'metal_packaging', 'paper_packaging', 'glass_bottles'])) {
             containers.package_recycling.push(item);
         }
         else {
