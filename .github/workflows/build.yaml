@@ -6,7 +6,8 @@ on:
       - main
   workflow_dispatch:
   schedule:
-    - cron: '0 0 * * 0' # Every Sunday at midnight
+    # - cron: '0 0 * * 0' # Every Sunday at midnight
+    - cron: '50 * * * *' # every 50 minutes of the hour
 
 jobs:
   build:
