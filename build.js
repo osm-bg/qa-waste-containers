@@ -14,12 +14,16 @@ function fetch_osm_data() {
     return queryOverpass(overpass_query);
 }
 
-function has_recycling_tags(tags, target_keys) {
-    return target_keys.every(type => {
+function has_recycling_tags(tags, target_keys, all_must_exist = true) {
+    function accepts(type) {
         const key = `recycling:${type}`;
         const allowed_values = ['yes', 'only'];
         return tags.hasOwnProperty(key) && allowed_values.includes(tags[key]);
-    });
+    }
+    if(all_must_exist) {
+        return target_keys.every(type => accepts(type));
+    }
+    return target_keys.some(type => accepts(type));
 }
 
 function preprocess_osm_data(data) {
@@ -51,7 +55,7 @@ function preprocess_osm_data(data) {
         else if(item.tags.amenity === 'waste_disposal') {
             containers.mixed.push(item);
         }
-        else if(has_recycling_tags(item.tags, ['clothes', 'shoes']) || has_recycling_tags(item.tags, ['clothes'])) {
+        else if(has_recycling_tags(item.tags, ['clothes', 'shoes'], false)) {
             containers.clothes_recycling.push(item);
         }
         else if(has_recycling_tags(item.tags, ['electrical_appliances'])) {
@@ -60,7 +64,7 @@ function preprocess_osm_data(data) {
         else if(has_recycling_tags(item.tags, ['batteries'])) {
             containers.battery_recycling.push(item);
         }
-        else if(has_recycling_tags(item.tags, ['plastic_packaging', 'metal_packaging', 'paper_packaging', 'glass_bottles'])) {
+        else if(has_recycling_tags(item.tags, ['plastic_packaging', 'metal_packaging', 'paper_packaging', 'glass_bottles'], false)) {
             containers.package_recycling.push(item);
         }
         else if(has_recycling_tags(item.tags, ['pet_drink_bottles'])) {
