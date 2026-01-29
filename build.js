@@ -67,6 +67,9 @@ function preprocess_osm_data(data) {
         else if(has_recycling_tags(item.tags, ['plastic_bottle_caps'])) {
             item.cat = 'plastic_caps';
         }
+        else if(has_recycling_tags(item.tags, ['drugs'])) {
+            item.cat = 'drugs';
+        }
         else {
             item.cat = 'unknown_waste';
         }
