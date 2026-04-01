@@ -55,12 +55,12 @@ function preprocess_osm_data(data) {
         else if(has_recycling_tags(item.tags, ['batteries'])) {
             item.cat = 'battery_recycling';
         }
-        else if(has_recycling_tags(item.tags, ['plastic_packaging', 'metal_packaging', 'paper_packaging', 'glass_bottles'], false)) {
+        else if(has_recycling_tags(item.tags, ['plastic_packaging', 'metal_packaging', 'paper_packaging', 'glass_bottles', 'pet_drink_bottles'], false)) {
             item.cat = 'package_recycling';
         }
-        else if(has_recycling_tags(item.tags, ['pet_drink_bottles'])) {
-            item.cat = 'pet_container';
-        }
+        // else if(has_recycling_tags(item.tags, ['pet_drink_bottles'])) {
+        //     item.cat = 'pet_container';
+        // }
         else if(has_recycling_tags(item.tags, ['cooking_oil'])) {
             item.cat = 'cooking_oil';
         }
@@ -143,6 +143,38 @@ async function run() {
     const osm_data = await fetch_osm_data();
     preprocess_osm_data(osm_data);
     const grouped_data = group_close_points(osm_data, CONTAINER_MAX_MATCH_DISTANCE_METERS);
+    for(const group of grouped_data) {
+        const recycling_containers = group.containers.filter(p => p.cat === 'package_recycling');
+        if(recycling_containers.length <= 1) {
+            continue;
+        }
+        const merged_container = {
+            type: 'node',
+            ids: recycling_containers.map(p => p.id),
+            tags: {
+
+            },
+            cat: recycling_containers[0].cat,
+            coords: [
+                recycling_containers.reduce((sum, p) => sum + p.coords[0], 0) / recycling_containers.length,
+                recycling_containers.reduce((sum, p) => sum + p.coords[1], 0) / recycling_containers.length
+            ]
+        };
+        recycling_containers.forEach(p => {
+            for(const [key, value] of Object.entries(p.tags)) {
+                if(!merged_container.tags[key]) {
+                    merged_container.tags[key] = value;
+                }
+                else if(key.startsWith('count')) {
+                    const existing_count = parseInt(merged_container.tags[key]) || 0;
+                    const new_count = parseInt(value) || 0;
+                    merged_container.tags[key] = (existing_count + new_count).toString();
+                }
+            }
+        });
+        group.containers = group.containers.filter(p => p.cat !== 'package_recycling');
+        group.containers.push(merged_container);
+    }
     const to_write = {
         date: new Date().toISOString(),
         data: grouped_data
