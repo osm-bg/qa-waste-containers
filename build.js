@@ -107,16 +107,6 @@ function group_close_points(points, threshold_meters) {
         let curr_group_size = group.containers.length;
         while(prev_group_size !== curr_group_size) {
             group.containers.push(...find_points_in_bbox(points, group.containers, threshold_meters));
-            let waste_disposal_count = group.containers.filter(p => p.cat === 'waste_disposal').length;
-            if(waste_disposal_count > 1) {
-                for(let i = group.containers.length - 1; i >= 0; i--) {
-                    // Remove excess 'waste_disposal' containers, keep only one
-                    if(group.containers[i].cat === 'waste_disposal' && waste_disposal_count > 1) {
-                        group.containers.splice(i, 1);
-                        waste_disposal_count--;
-                    }
-                }
-            }
             prev_group_size = curr_group_size;
             curr_group_size = group.containers.length;
             for(const p of group.containers) {
@@ -144,36 +134,39 @@ async function run() {
     preprocess_osm_data(osm_data);
     const grouped_data = group_close_points(osm_data, CONTAINER_MAX_MATCH_DISTANCE_METERS);
     for(const group of grouped_data) {
-        const recycling_containers = group.containers.filter(p => p.cat === 'package_recycling');
-        if(recycling_containers.length <= 1) {
-            continue;
-        }
-        const merged_container = {
-            type: 'node',
-            ids: recycling_containers.map(p => p.id),
-            tags: {
-
-            },
-            cat: recycling_containers[0].cat,
-            coords: [
-                recycling_containers.reduce((sum, p) => sum + p.coords[0], 0) / recycling_containers.length,
-                recycling_containers.reduce((sum, p) => sum + p.coords[1], 0) / recycling_containers.length
-            ]
-        };
-        recycling_containers.forEach(p => {
-            for(const [key, value] of Object.entries(p.tags)) {
-                if(!merged_container.tags[key]) {
-                    merged_container.tags[key] = value;
-                }
-                else if(key.startsWith('count')) {
-                    const existing_count = parseInt(merged_container.tags[key]) || 0;
-                    const new_count = parseInt(value) || 0;
-                    merged_container.tags[key] = (existing_count + new_count).toString();
-                }
+        const group_only = ['waste_disposal', 'package_recycling'];
+        for(const cat of group_only) {
+            const containers = group.containers.filter(p => p.cat === cat);
+            if(containers.length <= 1) {
+                continue;
             }
-        });
-        group.containers = group.containers.filter(p => p.cat !== 'package_recycling');
-        group.containers.push(merged_container);
+            const merged_container = {
+                type: 'node',
+                ids: containers.map(p => p.id),
+                tags: {
+
+                },
+                cat: containers[0].cat,
+                coords: [
+                    containers.reduce((sum, p) => sum + p.coords[0], 0) / containers.length,
+                    containers.reduce((sum, p) => sum + p.coords[1], 0) / containers.length
+                ]
+            };
+            containers.forEach(p => {
+                for(const [key, value] of Object.entries(p.tags)) {
+                    if(!merged_container.tags[key]) {
+                        merged_container.tags[key] = value;
+                    }
+                    else if(key.startsWith('count')) {
+                        const existing_count = parseInt(merged_container.tags[key]) || 0;
+                        const new_count = parseInt(value) || 0;
+                        merged_container.tags[key] = (existing_count + new_count).toString();
+                    }
+                }
+            });
+            group.containers = group.containers.filter(p => p.cat !== cat);
+            group.containers.push(merged_container);
+        }
     }
     const to_write = {
         date: new Date().toISOString(),
